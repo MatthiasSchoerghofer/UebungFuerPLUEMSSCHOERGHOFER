@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+        <BaseOutputPath>C:\Scratch\POS_exam_dotnet_seed\src\Aufgabe2_BusinessServices</BaseOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Bogus"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Model\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Aufgabe1_ORMapping\Aufgabe1_ORMapping.csproj" />
+    </ItemGroup>
+
+</Project>

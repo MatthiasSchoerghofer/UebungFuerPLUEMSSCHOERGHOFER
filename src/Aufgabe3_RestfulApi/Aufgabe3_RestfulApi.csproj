@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+        <BaseOutputPath>C:\Scratch\POS_exam_dotnet_seed\src\Aufgabe3_RestfulApi</BaseOutputPath>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Bogus" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+		<PackageReference Include="Swashbuckle.AspNetCore" />
+		<PackageReference Include="FluentValidation" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Scalar.AspNetCore" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Aufgabe1_ORMapping\Aufgabe1_ORMapping.csproj" />
+		<ProjectReference Include="..\Aufgabe2_BusinessServices\Aufgabe2_BusinessServices.csproj" />
+	</ItemGroup>
+
+
+</Project>
