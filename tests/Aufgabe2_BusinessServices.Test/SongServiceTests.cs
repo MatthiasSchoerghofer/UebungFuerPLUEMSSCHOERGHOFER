@@ -22,7 +22,7 @@ public class SongServiceTests
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
-
+ 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -85,6 +85,31 @@ public class SongServiceTests
 
             Assert.Single(result);
             Assert.All(result, song => Assert.True(song.Streams >= 1_000_000));
+        }
+    }
+
+    /// <summary>
+    /// Prüft Pagination: Die zweite Seite mit pageSize 2 überspringt genau die ersten zwei Songs.
+    /// </summary>
+    [Fact]
+    public async Task GetPagedAsync_ReturnsRequestedPage()
+    {
+        var (db, service) = CreateService();
+        await using (db)
+        {
+            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Alpha", "Artist A", 1));
+            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Beta", "Artist B", 2));
+            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Gamma", "Artist C", 3));
+
+            var result = await service.GetPagedAsync(page: 2, pageSize: 2);
+
+            Assert.Equal(3, result.TotalCount);
+            Assert.Equal(2, result.Page);
+            Assert.Equal(2, result.PageSize);
+            Assert.Single(result.Items);
+            Assert.Equal("Gamma", result.Items[0].Title);
+            Assert.True(result.HasPreviousPage);
+            Assert.False(result.HasNextPage);
         }
     }
 

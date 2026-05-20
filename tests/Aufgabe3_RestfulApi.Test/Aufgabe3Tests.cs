@@ -56,6 +56,24 @@ public class Aufgabe3Tests : IDisposable
     }
 
     /// <summary>
+    /// Endpunkt-Test: GET /api/songs/paged liefert nur eine Seite und Pagination-Metadaten.
+    /// </summary>
+    [Fact]
+    public async Task GetSongsPaged_ReturnsRequestedPage()
+    {
+        using HttpClient client = _factory.Client;
+
+        var (status, result) = await client.GetHttpContent<PagedResultDto<SongResponseDto>>("/api/songs/paged?page=1&pageSize=2");
+
+        Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.True(result.TotalCount >= 2);
+        Assert.True(result.Items.Count <= 2);
+    }
+
+    /// <summary>
     /// Endpunkt-Test: POST /api/songs legt einen Song an und liefert 201 Created.
     /// </summary>
     [Fact]

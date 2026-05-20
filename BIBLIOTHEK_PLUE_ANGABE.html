@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>POS PLUE Uebungsangabe - Bibliothek</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 16mm 15mm 17mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #172033;
+      background: #ffffff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 10.4pt;
+      line-height: 1.5;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      padding: 18px 20px 20px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #24466f, #2f6f73);
+      border-radius: 8px;
+      font-size: 23pt;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 22px 0 8px;
+      padding-bottom: 5px;
+      color: #24466f;
+      border-bottom: 2px solid #d8e4ef;
+      font-size: 15.5pt;
+      break-after: avoid;
+    }
+
+    h3 {
+      margin: 14px 0 5px;
+      color: #2f4f5f;
+      font-size: 12.5pt;
+      break-after: avoid;
+    }
+
+    p {
+      margin: 0 0 8px;
+    }
+
+    ul {
+      margin: 5px 0 10px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 2px 0;
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #edf3f8;
+      color: #16314a;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+    }
+
+    strong {
+      color: #122137;
+    }
+
+    .visual {
+      margin: 12px 0 16px;
+      padding: 12px;
+      border: 1px solid #c7d7e5;
+      border-radius: 8px;
+      background: #f8fbfd;
+    }
+
+    .page-avoid {
+      break-inside: avoid;
+    }
+
+    .visual-title {
+      margin-bottom: 9px;
+      color: #24466f;
+      font-weight: 700;
+      font-size: 11.5pt;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: 1fr 18px 1fr 18px 1fr;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .pipeline .pipe-card:nth-of-type(n + 4),
+    .pipeline .arrow:nth-of-type(n + 4) {
+      margin-top: 7px;
+    }
+
+    .pipe-card {
+      min-height: 58px;
+      padding: 8px;
+      border: 1px solid #b8ccdc;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .pipe-card strong,
+    .pipe-card span,
+    .test-layer strong,
+    .test-layer span {
+      display: block;
+    }
+
+    .pipe-card span,
+    .test-layer span,
+    .entity small {
+      color: #506275;
+      font-size: 8.6pt;
+    }
+
+    .arrow,
+    .relation {
+      color: #2f6f73;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .er-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 52px 1.1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .entity {
+      min-height: 84px;
+      padding: 9px 10px;
+      border: 1px solid #b8ccdc;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .entity h3 {
+      margin: 0 0 3px;
+      font-size: 11pt;
+    }
+
+    .entity p {
+      margin: 0 0 4px;
+      font-size: 9.3pt;
+    }
+
+    .wide {
+      border-color: #c9b77f;
+      background: #fffdf7;
+    }
+
+    .endpoint-grid {
+      display: grid;
+      grid-template-columns: 54px 1.25fr 1fr;
+      gap: 6px 8px;
+      align-items: center;
+    }
+
+    .endpoint-grid span {
+      padding: 3px 6px;
+      border-radius: 4px;
+      color: #ffffff;
+      background: #2f6f73;
+      font-weight: 700;
+      text-align: center;
+      font-size: 8.4pt;
+    }
+
+    .endpoint-grid em {
+      color: #506275;
+      font-style: normal;
+      font-size: 9pt;
+    }
+
+    .test-stack {
+      display: grid;
+      gap: 7px;
+    }
+
+    .test-layer {
+      padding: 9px 12px;
+      border-radius: 6px;
+      color: #152334;
+      border: 1px solid transparent;
+    }
+
+    .api {
+      margin-left: 60px;
+      margin-right: 60px;
+      background: #f1f6fb;
+      border-color: #bed2e4;
+    }
+
+    .service {
+      margin-left: 32px;
+      margin-right: 32px;
+      background: #f5faf8;
+      border-color: #b8d9cf;
+    }
+
+    .db {
+      background: #fffaf0;
+      border-color: #dbc88e;
+    }
+  </style>
+</head>
+<body>
+  <h1>POS PLUE Uebungsangabe: Bibliothek und Buecherverleih</h1>
+<h2>Ziel</h2>
+<p>Baue aus der vorhandenen ASP.NET-Core-Vorlage eine kleine Bibliotheks-API. Die Aufgabe soll REST, EF Core, LINQ, Services, DTOs und Tests abdecken, aber ohne unnoetig viele fast gleiche Mapper- und Controller-Methoden.</p>
+<p>Die bestehende Song-App ist deine technische Schablone. Du ersetzt die Song-Domaene durch Bibliothek/Buecherverleih.</p>
+<h2>Architektur</h2>
+<p>Verwende die Controller-Architektur aus der Vorlage:</p>
+<ul>
+<li><code>Aufgabe1_ORMapping</code>: Entities, Enums, DbContext, LINQ-Queries</li>
+<li><code>Aufgabe2_BusinessServices</code>: Commands, DTOs, Mapper, Service, TestFixtures</li>
+<li><code>Aufgabe3_RestfulApi</code>: Controller und Dependency Injection</li>
+<li><code>tests/*</code>: Tests fuer Mapping/LINQ, Service und REST-Endpunkte</li>
+</ul>
+<p>Regel:</p>
+<ul>
+<li>Controller kennen HTTP und Statuscodes.</li>
+<li>Services kennen Businesslogik.</li>
+<li>Mapper wandeln nur Objekte um.</li>
+<li>DbContext kennt EF-Core-Mapping und LINQ.</li>
+<li>API gibt DTOs zurueck, keine EF-Entities.</li>
+</ul>
+<h2>Fachliche Beschreibung</h2>
+<p>Die Schulbibliothek verwaltet Buecher, Autorinnen/Autoren und Ausleihen.</p>
+<p>Ein Buch gehoert genau zu einem Author. Ein Buch kann mehrere Exemplare haben. Darum speichert das System <code>TotalCopies</code> und <code>AvailableCopies</code>.</p>
+<p>Eine Ausleihe entsteht, wenn jemand ein verfuegbares Buch ausleiht. In dieser schlanken Version gibt es keine eigene <code>LibraryMember</code>-Entity. Der Name der ausleihenden Person wird direkt in der Ausleihe gespeichert. Dadurch lernst du trotzdem Beziehungen, DTOs, Services, LINQ und Endpunkte, musst aber nicht noch eine fast gleiche Member-Verwaltung bauen.</p>
+<h2>Aufgabe 1: OR-Mapping und DbContext</h2>
+<section class="visual page-avoid">
+  <div class="visual-title">Visualisierung: Datenmodell</div>
+  <div class="er-grid">
+    <div class="entity">
+      <h3>Author</h3>
+      <p>Id, Name, Country, BirthYear</p>
+      <small>1 Author hat n Books</small>
+    </div>
+    <div class="relation">1 → n</div>
+    <div class="entity">
+      <h3>Book</h3>
+      <p>ISBN, Title, Genre, Copies</p>
+      <small>1 Book hat n Loans</small>
+    </div>
+    <div class="entity">
+      <h3>BookLoan</h3>
+      <p>BorrowedBy, BorrowedAt, DueAt, ReturnedAt, Status</p>
+      <small>n Loans gehoeren zu 1 Book</small>
+    </div>
+  </div>
+</section>
+<p>Erstelle im Projekt <code>Aufgabe1_ORMapping</code> folgende Enums und Entities.</p>
+<h3>Enums</h3>
+<p><code>BookGenre</code></p>
+<ul>
+<li><code>Fantasy</code></li>
+<li><code>ScienceFiction</code></li>
+<li><code>Crime</code></li>
+<li><code>History</code></li>
+<li><code>Programming</code></li>
+<li><code>School</code></li>
+</ul>
+<p><code>LoanStatus</code></p>
+<ul>
+<li><code>Active</code></li>
+<li><code>Returned</code></li>
+</ul>
+<h3>Entity: Author</h3>
+<p>Properties:</p>
+<ul>
+<li><code>int Id</code></li>
+<li><code>string Name</code></li>
+<li><code>string? Country</code></li>
+<li><code>List&lt;Book&gt; Books</code></li>
+</ul>
+<p>Regeln:</p>
+<ul>
+<li><code>Name</code> ist verpflichtend und maximal 120 Zeichen lang.</li>
+<li><code>Country</code> ist optional und maximal 80 Zeichen lang.</li>
+<li><code>Name</code> ist eindeutig.</li>
+</ul>
+<h3>Entity: Book</h3>
+<p>Properties:</p>
+<ul>
+<li><code>int Id</code></li>
+<li><code>string Isbn</code></li>
+<li><code>string Title</code></li>
+<li><code>int PublicationYear</code></li>
+<li><code>int Pages</code></li>
+<li><code>BookGenre Genre</code></li>
+<li><code>int TotalCopies</code></li>
+<li><code>int AvailableCopies</code></li>
+<li><code>DateTime AddedAt</code></li>
+<li><code>int AuthorId</code></li>
+<li><code>Author Author</code></li>
+<li><code>List&lt;BookLoan&gt; Loans</code></li>
+</ul>
+<p>Regeln:</p>
+<ul>
+<li><code>Isbn</code> ist verpflichtend, maximal 20 Zeichen lang und eindeutig.</li>
+<li><code>Title</code> ist verpflichtend und maximal 180 Zeichen lang.</li>
+<li><code>Pages</code> muss groesser als 0 sein.</li>
+<li><code>TotalCopies</code> muss mindestens 1 sein.</li>
+<li><code>AvailableCopies</code> darf nicht negativ sein und darf nicht groesser als <code>TotalCopies</code> sein.</li>
+<li>Ein <code>Author</code> hat viele <code>Books</code>.</li>
+<li>Ein <code>Book</code> hat genau einen <code>Author</code>.</li>
+<li>Beim Loeschen eines Authors sollen Books nicht automatisch geloescht werden.</li>
+</ul>
+<h3>Entity: BookLoan</h3>
+<p>Properties:</p>
+<ul>
+<li><code>int Id</code></li>
+<li><code>int BookId</code></li>
+<li><code>Book Book</code></li>
+<li><code>string BorrowedBy</code></li>
+<li><code>DateTime BorrowedAt</code></li>
+<li><code>DateTime DueAt</code></li>
+<li><code>DateTime? ReturnedAt</code></li>
+<li><code>LoanStatus Status</code></li>
+</ul>
+<p>Regeln:</p>
+<ul>
+<li><code>BorrowedBy</code> ist verpflichtend und maximal 120 Zeichen lang.</li>
+<li><code>Status</code> ist standardmaessig <code>Active</code>.</li>
+<li>Ein <code>Book</code> hat viele <code>BookLoans</code>.</li>
+<li>Beim Loeschen eines Books sollen Ausleihen nicht unkontrolliert verschwinden. Verwende eine sinnvolle <code>DeleteBehavior</code>-Konfiguration.</li>
+</ul>
+<h3>DbSets</h3>
+<p>Der <code>AppDbContext</code> enthaelt:</p>
+<ul>
+<li><code>Authors</code></li>
+<li><code>Books</code></li>
+<li><code>BookLoans</code></li>
+</ul>
+<h3>LINQ-Queries im DbContext</h3>
+<p>Implementiere diese Methoden als <code>IQueryable</code>-Queries:</p>
+<ol>
+<li><p><code>QueryAvailableBooks(BookGenre? genre = null)</code></p>
+<ul>
+<li>Nur Buecher mit <code>AvailableCopies &gt; 0</code>.</li>
+<li>Optional nach Genre filtern.</li>
+<li>Nach <code>Title</code> aufsteigend sortieren.</li>
+<li><code>Author</code> per <code>Include</code> laden.</li>
+</ul>
+</li>
+<li><p><code>QueryOverdueLoans(DateTime today)</code></p>
+<ul>
+<li>Nur Ausleihen mit <code>Status == Active</code> und <code>DueAt &lt; today</code>.</li>
+<li><code>Book</code> und <code>Book.Author</code> laden.</li>
+<li>Nach <code>DueAt</code> aufsteigend sortieren.</li>
+</ul>
+</li>
+<li><p><code>QueryBooksByAuthor(string authorName)</code></p>
+<ul>
+<li>Nur Buecher dieses Authors.</li>
+<li>Case-insensitive Vergleich ist optional.</li>
+<li>Nach <code>PublicationYear</code> absteigend sortieren.</li>
+<li><code>Author</code> laden.</li>
+</ul>
+</li>
+</ol>
+<p>Diese drei Queries reichen. Sie pruefen <code>Where</code>, optionale Filter, <code>Include</code>, <code>ThenInclude</code>, <code>OrderBy</code> und Navigation Properties.</p>
+<h2>Aufgabe 2: Business Services, DTOs, Mapper</h2>
+<p>Erstelle im Projekt <code>Aufgabe2_BusinessServices</code> die Service-Schicht.</p>
+<h3>Commands</h3>
+<p><code>CreateBookCmd</code></p>
+<ul>
+<li><code>string Isbn</code></li>
+<li><code>string Title</code></li>
+<li><code>string AuthorName</code></li>
+<li><code>string? AuthorCountry</code></li>
+<li><code>int PublicationYear</code></li>
+<li><code>int Pages</code></li>
+<li><code>BookGenre Genre</code></li>
+<li><code>int TotalCopies</code></li>
+</ul>
+<p><code>UpdateCopiesCmd</code></p>
+<ul>
+<li><code>int TotalCopies</code></li>
+</ul>
+<p><code>BorrowBookCmd</code></p>
+<ul>
+<li><code>int BookId</code></li>
+<li><code>string BorrowedBy</code></li>
+</ul>
+<p><code>ReturnBookCmd</code></p>
+<ul>
+<li><code>DateTime ReturnedAt</code></li>
+</ul>
+<h3>DTOs</h3>
+<p>Erstelle nur zwei Response-DTOs.</p>
+<p><code>BookResponseDto</code></p>
+<ul>
+<li><code>int Id</code></li>
+<li><code>string Isbn</code></li>
+<li><code>string Title</code></li>
+<li><code>string AuthorName</code></li>
+<li><code>int PublicationYear</code></li>
+<li><code>BookGenre Genre</code></li>
+<li><code>int TotalCopies</code></li>
+<li><code>int AvailableCopies</code></li>
+</ul>
+<p><code>LoanResponseDto</code></p>
+<ul>
+<li><code>int Id</code></li>
+<li><code>int BookId</code></li>
+<li><code>string BookTitle</code></li>
+<li><code>string AuthorName</code></li>
+<li><code>string BorrowedBy</code></li>
+<li><code>DateTime BorrowedAt</code></li>
+<li><code>DateTime DueAt</code></li>
+<li><code>DateTime? ReturnedAt</code></li>
+<li><code>LoanStatus Status</code></li>
+</ul>
+<p>Kein eigenes <code>AuthorResponseDto</code>, kein eigenes <code>MemberResponseDto</code>, kein Statistik-DTO. Author-Daten werden im <code>BookResponseDto</code> und <code>LoanResponseDto</code> mitgegeben. Das spart Mapper-Methoden und ist fuer diese Uebung genug.</p>
+<h3>Mapper</h3>
+<p>Erstelle einen <code>LibraryMapper</code> mit genau diesen Methoden:</p>
+<ul>
+<li><code>Book ToEntity(CreateBookCmd cmd, Author author, DateTime addedAt)</code></li>
+<li><code>BookLoan ToEntity(Book book, BorrowBookCmd cmd, DateTime borrowedAt, DateTime dueAt)</code></li>
+<li><code>BookResponseDto ToDto(Book book)</code></li>
+<li><code>LoanResponseDto ToDto(BookLoan loan)</code></li>
+</ul>
+<p>Mehr Mapper-Methoden brauchst du nicht.</p>
+<p>Wichtig:</p>
+<ul>
+<li>Der Service erstellt oder sucht den <code>Author</code>.</li>
+<li>Der Mapper bekommt den fertigen <code>Author</code> nur uebergeben.</li>
+<li>Rueckgabe ist kein neues Objekt, sondern Aenderung einer bestehenden <code>BookLoan</code>. Dafuer gibt es keine Mapper-Methode.</li>
+<li><code>UpdateCopiesCmd</code> erzeugt ebenfalls keine neue Entity. Der Service aendert nur <code>book.TotalCopies</code> und <code>book.AvailableCopies</code>.</li>
+</ul>
+<h3>Service Interface</h3>
+<p>Erstelle <code>ILibraryService</code> mit diesen Methoden:</p>
+<ul>
+<li><code>Task&lt;IReadOnlyList&lt;BookResponseDto&gt;&gt; GetAllBooksAsync(...)</code></li>
+<li><code>Task&lt;BookResponseDto&gt; GetBookByIdAsync(int id, ...)</code></li>
+<li><code>Task&lt;BookResponseDto&gt; CreateBookAsync(CreateBookCmd cmd, ...)</code></li>
+<li><code>Task&lt;BookResponseDto&gt; UpdateCopiesAsync(int bookId, UpdateCopiesCmd cmd, ...)</code></li>
+<li><code>Task DeleteBookAsync(int bookId, ...)</code></li>
+<li><code>Task&lt;LoanResponseDto&gt; BorrowBookAsync(BorrowBookCmd cmd, ...)</code></li>
+<li><code>Task&lt;LoanResponseDto&gt; ReturnBookAsync(int loanId, ReturnBookCmd cmd, ...)</code></li>
+<li><code>Task&lt;IReadOnlyList&lt;BookResponseDto&gt;&gt; GetAvailableBooksAsync(BookGenre? genre, ...)</code></li>
+<li><code>Task&lt;IReadOnlyList&lt;LoanResponseDto&gt;&gt; GetOverdueLoansAsync(DateTime today, ...)</code></li>
+<li><code>Task&lt;IReadOnlyList&lt;BookResponseDto&gt;&gt; GetBooksByAuthorAsync(string authorName, ...)</code></li>
+</ul>
+<h3>Service-Regeln</h3>
+<p>Beim Erstellen eines Buchs:</p>
+<ul>
+<li><code>Title</code>, <code>Isbn</code> und <code>AuthorName</code> duerfen nicht leer sein.</li>
+<li><code>PublicationYear</code> darf nicht kleiner als 1450 und nicht groesser als das aktuelle Jahr sein.</li>
+<li><code>Pages</code> muss groesser als 0 sein.</li>
+<li><code>TotalCopies</code> muss mindestens 1 sein.</li>
+<li>Existiert ein Author mit gleichem Namen bereits, wird er wiederverwendet.</li>
+<li>Neues Buch startet mit <code>AvailableCopies == TotalCopies</code>.</li>
+</ul>
+<p>Beim Aktualisieren der Exemplare:</p>
+<ul>
+<li><code>TotalCopies</code> darf nicht kleiner sein als die Anzahl aktuell ausgeliehener Exemplare.</li>
+<li><code>AvailableCopies</code> wird neu berechnet.</li>
+<li>Beispiel: 5 Gesamt, 2 verfuegbar, 3 ausgeliehen. Aenderung auf 4 ergibt 1 verfuegbar.</li>
+</ul>
+<p>Beim Ausleihen:</p>
+<ul>
+<li>Book muss existieren.</li>
+<li><code>BorrowedBy</code> darf nicht leer sein.</li>
+<li>Ein Buch darf nur ausgeliehen werden, wenn <code>AvailableCopies &gt; 0</code>.</li>
+<li>Dieselbe Person darf dasselbe Buch nicht zweimal gleichzeitig aktiv ausgeliehen haben.</li>
+<li>Beim Ausleihen wird <code>AvailableCopies</code> um 1 reduziert.</li>
+<li><code>BorrowedAt</code> ist <code>DateTime.UtcNow</code>.</li>
+<li><code>DueAt</code> ist 14 Tage nach <code>BorrowedAt</code>.</li>
+<li><code>Status</code> ist <code>Active</code>.</li>
+</ul>
+<p>Beim Zurueckgeben:</p>
+<ul>
+<li>Loan muss existieren.</li>
+<li>Bereits retournierte Loans duerfen nicht erneut retourniert werden.</li>
+<li><code>ReturnedAt</code> wird gesetzt.</li>
+<li><code>Status</code> wird <code>Returned</code>.</li>
+<li><code>AvailableCopies</code> des Books wird um 1 erhoeht.</li>
+</ul>
+<p>Fehler:</p>
+<ul>
+<li>Nicht gefunden: eigene <code>NotFoundException</code>.</li>
+<li>Fachlich ungueltig: <code>ArgumentException</code>.</li>
+</ul>
+<h2>Aufgabe 3: REST API</h2>
+<section class="visual page-avoid">
+  <div class="visual-title">Visualisierung: wichtigste Endpunkte</div>
+  <div class="endpoint-grid">
+    <span>GET</span><code>/api/books</code><em>alle Buecher</em>
+    <span>POST</span><code>/api/books</code><em>Buch erstellen</em>
+    <span>GET</span><code>/api/books/available</code><em>LINQ: verfuegbar</em>
+    <span>GET</span><code>/api/books/by-author</code><em>LINQ: Author</em>
+    <span>POST</span><code>/api/loans</code><em>ausleihen</em>
+    <span>PUT</span><code>/api/loans/{id}/return</code><em>zurueckgeben</em>
+    <span>GET</span><code>/api/loans/overdue</code><em>LINQ: ueberfaellig</em>
+  </div>
+</section>
+<p>Registriere den <code>LibraryService</code> per Dependency Injection.</p>
+<p>Erstelle nur zwei Controller.</p>
+<h3>BooksController</h3>
+<p>Route: <code>api/books</code></p>
+<p><code>GET /api/books</code></p>
+<ul>
+<li>Liefert alle Buecher.</li>
+<li>Status: <code>200 OK</code></li>
+</ul>
+<p><code>GET /api/books/{id}</code></p>
+<ul>
+<li>Liefert ein Buch nach Id.</li>
+<li>Status: <code>200 OK</code></li>
+<li>Wenn nicht gefunden: <code>404 NotFound</code></li>
+</ul>
+<p><code>POST /api/books</code></p>
+<ul>
+<li>Erstellt ein neues Buch.</li>
+<li>Body: <code>CreateBookCmd</code></li>
+<li>Status: <code>201 Created</code></li>
+<li>Bei ungueltigen Daten: <code>400 BadRequest</code></li>
+</ul>
+<p><code>PUT /api/books/{id}/copies</code></p>
+<ul>
+<li>Aendert die Anzahl der Gesamtexemplare.</li>
+<li>Body: <code>UpdateCopiesCmd</code></li>
+<li>Status: <code>200 OK</code></li>
+<li>Wenn nicht gefunden: <code>404 NotFound</code></li>
+<li>Bei ungueltiger Anzahl: <code>400 BadRequest</code></li>
+</ul>
+<p><code>DELETE /api/books/{id}</code></p>
+<ul>
+<li>Loescht ein Buch.</li>
+<li>Status: <code>204 NoContent</code></li>
+<li>Wenn nicht gefunden: <code>404 NotFound</code></li>
+<li>Wenn aktive Ausleihen existieren: <code>400 BadRequest</code></li>
+</ul>
+<p><code>GET /api/books/available?genre=Programming</code></p>
+<ul>
+<li>LINQ-Endpunkt.</li>
+<li>Liefert verfuegbare Buecher, optional nach Genre.</li>
+<li>Status: <code>200 OK</code></li>
+</ul>
+<p><code>GET /api/books/by-author?authorName=Robert%20C.%20Martin</code></p>
+<ul>
+<li>LINQ-Endpunkt.</li>
+<li>Liefert Buecher eines Authors.</li>
+<li>Status: <code>200 OK</code></li>
+</ul>
+<h3>LoansController</h3>
+<p>Route: <code>api/loans</code></p>
+<p><code>POST /api/loans</code></p>
+<ul>
+<li>Leiht ein Buch aus.</li>
+<li>Body: <code>BorrowBookCmd</code></li>
+<li>Status: <code>201 Created</code></li>
+<li>Wenn Book nicht existiert: <code>404 NotFound</code></li>
+<li>Wenn Buch nicht verfuegbar oder Person schon aktiv dasselbe Buch hat: <code>400 BadRequest</code></li>
+</ul>
+<p><code>PUT /api/loans/{loanId}/return</code></p>
+<ul>
+<li>Gibt ein Buch zurueck.</li>
+<li>Body: <code>ReturnBookCmd</code></li>
+<li>Status: <code>200 OK</code></li>
+<li>Wenn Loan nicht existiert: <code>404 NotFound</code></li>
+<li>Wenn Loan bereits retourniert wurde: <code>400 BadRequest</code></li>
+</ul>
+<p><code>GET /api/loans/overdue?today=2026-05-18</code></p>
+<ul>
+<li>LINQ-Endpunkt.</li>
+<li>Liefert ueberfaellige aktive Ausleihen.</li>
+<li>Status: <code>200 OK</code></li>
+<li>Wenn <code>today</code> nicht angegeben wird, verwende <code>DateTime.UtcNow</code>.</li>
+</ul>
+<h2>Aufgabe 4: TestFixtures</h2>
+<p>Erstelle eine <code>LibraryTestDataFactory</code>, damit Tests kurz bleiben.</p>
+<p>Methoden:</p>
+<ul>
+<li><code>Author(...)</code></li>
+<li><code>Book(...)</code></li>
+<li><code>ActiveLoan(...)</code></li>
+<li><code>CreateBookCmd(...)</code></li>
+<li><code>BorrowBookCmd(...)</code></li>
+<li><code>ReturnBookCmd(...)</code></li>
+</ul>
+<p>Keine eigene Member-Fixture, weil es keine Member-Entity gibt.</p>
+<h2>Aufgabe 5: Tests</h2>
+<section class="visual page-avoid">
+  <div class="visual-title">Visualisierung: Teststrategie</div>
+  <div class="test-stack">
+    <div class="test-layer api"><strong>REST Integrationstests</strong><span>Controller, Routing, JSON, HTTP-Codes</span></div>
+    <div class="test-layer service"><strong>Service Tests</strong><span>Businessregeln, Exceptions, DTOs</span></div>
+    <div class="test-layer db"><strong>DbContext Tests</strong><span>EF Mapping, SQLite In-Memory, LINQ</span></div>
+  </div>
+</section>
+<p>Schreibe wenige, aber gezielte Tests.</p>
+<h3>Tests fuer Aufgabe1_ORMapping</h3>
+<ol>
+<li><p><code>CreateDatabaseTest</code></p>
+<ul>
+<li>Datenbank kann erstellt werden.</li>
+</ul>
+</li>
+<li><p><code>QueryAvailableBooks_ReturnsOnlyAvailableBooks</code></p>
+<ul>
+<li>Alle Ergebnisse haben <code>AvailableCopies &gt; 0</code>.</li>
+</ul>
+</li>
+<li><p><code>QueryAvailableBooks_WithGenre_ReturnsOnlyMatchingGenre</code></p>
+<ul>
+<li>Alle Ergebnisse haben das gewuenschte Genre.</li>
+</ul>
+</li>
+<li><p><code>QueryOverdueLoans_ReturnsOnlyActiveLoansBeforeToday</code></p>
+<ul>
+<li>Alle Ergebnisse sind aktiv und ueberfaellig.</li>
+</ul>
+</li>
+<li><p><code>QueryBooksByAuthor_ReturnsOnlyBooksFromAuthor</code></p>
+<ul>
+<li>Alle Ergebnisse gehoeren zum angegebenen Author.</li>
+</ul>
+</li>
+</ol>
+<h3>Tests fuer Aufgabe2_BusinessServices</h3>
+<ol>
+<li><p><code>CreateBookAsync_CreatesBookAndAuthor</code></p>
+<ul>
+<li>Buch und Author werden gespeichert.</li>
+<li><code>AvailableCopies == TotalCopies</code>.</li>
+</ul>
+</li>
+<li><p><code>CreateBookAsync_InvalidPages_ThrowsArgumentException</code></p>
+<ul>
+<li>Seitenanzahl 0 oder negativ ist ungueltig.</li>
+</ul>
+</li>
+<li><p><code>BorrowBookAsync_ReducesAvailableCopiesAndCreatesActiveLoan</code></p>
+<ul>
+<li>Loan wird erstellt.</li>
+<li><code>AvailableCopies</code> sinkt um 1.</li>
+</ul>
+</li>
+<li><p><code>BorrowBookAsync_SameBorrowerAlreadyHasBook_ThrowsArgumentException</code></p>
+<ul>
+<li>Dieselbe Person darf dasselbe Buch nicht doppelt aktiv ausleihen.</li>
+</ul>
+</li>
+<li><p><code>ReturnBookAsync_MarksLoanAsReturnedAndIncreasesAvailableCopies</code></p>
+<ul>
+<li>Status ist <code>Returned</code>.</li>
+<li><code>AvailableCopies</code> steigt um 1.</li>
+</ul>
+</li>
+<li><p><code>GetOverdueLoansAsync_ReturnsOnlyOverdueLoans</code></p>
+<ul>
+<li>Service verwendet die LINQ-Query korrekt.</li>
+</ul>
+</li>
+</ol>
+<h3>Tests fuer Aufgabe3_RestfulApi</h3>
+<ol>
+<li><p><code>GetBooks_ReturnsOkAndBooks</code></p>
+<ul>
+<li><code>GET /api/books</code> liefert <code>200 OK</code>.</li>
+</ul>
+</li>
+<li><p><code>PostBook_ValidPayload_ReturnsCreated</code></p>
+<ul>
+<li><code>POST /api/books</code> liefert <code>201 Created</code>.</li>
+</ul>
+</li>
+<li><p><code>GetBook_UnknownId_ReturnsNotFound</code></p>
+<ul>
+<li>Unbekannte Id liefert <code>404 NotFound</code>.</li>
+</ul>
+</li>
+<li><p><code>GetAvailableBooks_ReturnsOnlyAvailableBooks</code></p>
+<ul>
+<li><code>GET /api/books/available</code> liefert nur verfuegbare Buecher.</li>
+</ul>
+</li>
+<li><p><code>BorrowBook_ValidPayload_ReturnsCreatedLoan</code></p>
+<ul>
+<li><code>POST /api/loans</code> liefert <code>201 Created</code>.</li>
+<li>Response hat Status <code>Active</code>.</li>
+</ul>
+</li>
+<li><p><code>ReturnLoan_ValidPayload_ReturnsOkAndReturnedLoan</code></p>
+<ul>
+<li><code>PUT /api/loans/{loanId}/return</code> liefert <code>200 OK</code>.</li>
+<li>Response hat Status <code>Returned</code>.</li>
+</ul>
+</li>
+<li><p><code>GetOverdueLoans_ReturnsOnlyOverdueLoans</code></p>
+<ul>
+<li><code>GET /api/loans/overdue?today=...</code> liefert nur aktive ueberfaellige Loans.</li>
+</ul>
+</li>
+</ol>
+<p>Diese Tests reichen fuer die Uebung. Du musst nicht jeden Getter und jeden schlechten Input testen.</p>
+<h2>Aufgabe 6: Beispiel-Testdaten fuer Integrationstests</h2>
+<p>Die <code>TestWebApplicationFactory</code> verwendet SQLite-In-Memory und fuellt die Datenbank kontrolliert.</p>
+<p>Authors:</p>
+<ul>
+<li><code>Robert C. Martin</code>, Country <code>USA</code></li>
+<li><code>J. K. Rowling</code>, Country <code>United Kingdom</code></li>
+<li><code>Douglas Adams</code>, Country <code>United Kingdom</code></li>
+</ul>
+<p>Books:</p>
+<ul>
+<li><code>Clean Code</code>, Programming, 464 Seiten, 3 Exemplare, 2 verfuegbar</li>
+<li><code>The Clean Coder</code>, Programming, 256 Seiten, 2 Exemplare, 2 verfuegbar</li>
+<li><code>Harry Potter and the Philosopher&#39;s Stone</code>, Fantasy, 320 Seiten, 1 Exemplar, 0 verfuegbar</li>
+<li><code>The Hitchhiker&#39;s Guide to the Galaxy</code>, ScienceFiction, 224 Seiten, 4 Exemplare, 4 verfuegbar</li>
+</ul>
+<p>Loans:</p>
+<ul>
+<li>Eine aktive Ausleihe von <code>Clean Code</code>, noch nicht ueberfaellig, <code>BorrowedBy = &quot;Max Mustermann&quot;</code></li>
+<li>Eine aktive ueberfaellige Ausleihe von <code>Harry Potter and the Philosopher&#39;s Stone</code>, <code>BorrowedBy = &quot;Erika Musterfrau&quot;</code></li>
+<li>Eine retournierte Ausleihe von <code>The Hitchhiker&#39;s Guide to the Galaxy</code>, <code>BorrowedBy = &quot;Max Mustermann&quot;</code></li>
+</ul>
+<h2>Bewertungskriterien</h2>
+<h3>OR-Mapping</h3>
+<ul>
+<li>Entities und Enums sind vollstaendig.</li>
+<li>Pflichtfelder, MaxLength, Indizes und Beziehungen sind sinnvoll konfiguriert.</li>
+<li>DeleteBehavior ist bewusst gewaehlt.</li>
+<li>LINQ-Queries verwenden <code>Where</code>, <code>OrderBy</code>, <code>Include</code>, <code>ThenInclude</code> und optionale Filter korrekt.</li>
+</ul>
+<h3>Businesslogik</h3>
+<ul>
+<li>Keine Businesslogik im Controller.</li>
+<li>Keine HTTP-Logik im Service.</li>
+<li>DTOs werden sauber verwendet.</li>
+<li>Mapper hat nur die vier geforderten Methoden.</li>
+<li>Ausleihen und Rueckgaben aendern <code>AvailableCopies</code> korrekt.</li>
+</ul>
+<h3>REST API</h3>
+<ul>
+<li>Routen sind konsistent.</li>
+<li>Erfolgsfaelle liefern passende Statuscodes: <code>200</code>, <code>201</code>, <code>204</code>.</li>
+<li>Fehlerfaelle liefern passende Statuscodes: <code>400</code>, <code>404</code>.</li>
+<li>API gibt keine EF-Entities direkt zurueck.</li>
+</ul>
+<h3>Tests</h3>
+<ul>
+<li>LINQ-Queries werden direkt am DbContext getestet.</li>
+<li>Service-Methoden werden ohne HTTP getestet.</li>
+<li>REST-Endpunkte werden mit echtem <code>HttpClient</code> getestet.</li>
+<li>Tests pruefen Statuscodes und fachliche Inhalte.</li>
+</ul>
+<h2>Theoriefragen</h2>
+<p>Beantworte kurz in <code>YOUR-NAME-answers-to-theory-questions.md</code>:</p>
+<ol>
+<li>Warum soll ein Controller keine Businesslogik enthalten?</li>
+<li>Warum gibt man ueber eine REST-API DTOs und keine EF-Entities zurueck?</li>
+<li>Was ist der Unterschied zwischen <code>IQueryable&lt;T&gt;</code> und <code>IEnumerable&lt;T&gt;</code>?</li>
+<li>Warum braucht man bei manchen LINQ-Abfragen <code>Include</code> oder <code>ThenInclude</code>?</li>
+<li>Was bedeutet <code>201 Created</code>?</li>
+<li>Warum ist SQLite-In-Memory fuer Tests oft besser als der EF-InMemoryProvider?</li>
+<li>Warum muss beim Ausleihen und Zurueckgeben <code>AvailableCopies</code> veraendert werden?</li>
+</ol>
+<h2>Abgabe</h2>
+<p>Vor der Abgabe:</p>
+<ul>
+<li><code>dotnet build</code></li>
+<li><code>dotnet test</code></li>
+<li>Keine <code>bin</code>, <code>obj</code>, lokale Datenbanken oder <code>TestResults</code> abgeben.</li>
+<li>Namen-Datei und Theoriefragen ausfuellen.</li>
+</ul>
+<h2>Empfohlene Arbeitsreihenfolge</h2>
+<ol>
+<li>Entities und Enums erstellen.</li>
+<li>DbContext konfigurieren.</li>
+<li>LINQ-Queries implementieren.</li>
+<li>OR-Mapping-Tests gruen bekommen.</li>
+<li>Commands, DTOs und die vier Mapper-Methoden erstellen.</li>
+<li>Service implementieren.</li>
+<li>Service-Tests gruen bekommen.</li>
+<li>Controller und DI registrieren.</li>
+<li>Integrationstests gruen bekommen.</li>
+<li>Theoriefragen beantworten.</li>
+</ol>
+
+</body>
+</html>

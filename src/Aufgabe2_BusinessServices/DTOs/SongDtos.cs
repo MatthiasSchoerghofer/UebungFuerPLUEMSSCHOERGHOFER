@@ -17,6 +17,21 @@ public record SongResponseDto(
     DateTime UploadedAt);
 
 /// <summary>
+/// Allgemeines DTO für Pagination-Antworten.
+/// Items enthält nur die aktuelle Seite, TotalCount die Gesamtanzahl aller passenden Datensätze.
+/// </summary>
+public record PagedResultDto<T>(
+    IReadOnlyList<T> Items,
+    int Page,
+    int PageSize,
+    int TotalCount)
+{
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
+}
+
+/// <summary>
 /// DTO für die Song-Suche nach Popularität.
 /// Es zeigt dieselben Daten wie SongResponseDto, wird aber bewusst getrennt gehalten,
 /// damit du siehst: DTOs können pro Use Case unterschiedlich sein.

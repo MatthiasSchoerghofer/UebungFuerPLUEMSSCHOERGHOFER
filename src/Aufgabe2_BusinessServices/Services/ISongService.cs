@@ -16,6 +16,11 @@ public interface ISongService
     Task<IReadOnlyList<SongResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Liefert Songs seitenweise mit Pagination-Metadaten.
+    /// </summary>
+    Task<PagedResultDto<SongResponseDto>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Liefert einen Song über seine Id oder wirft NotFoundException.
     /// </summary>
     Task<SongResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);

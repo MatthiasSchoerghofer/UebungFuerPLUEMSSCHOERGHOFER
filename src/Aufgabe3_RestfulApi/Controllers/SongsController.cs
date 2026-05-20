@@ -38,6 +38,28 @@ public class SongsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/songs/paged?page=1&pageSize=10
+    /// Liefert Songs seitenweise. page ist 1-basiert.
+    /// </summary>
+    [HttpGet("paged")]
+    [ProducesResponseType(typeof(PagedResultDto<SongResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResultDto<SongResponseDto>>> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Ok(await _service.GetPagedAsync(page, pageSize, cancellationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ProblemDetails { Detail = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// GET /api/songs/{id}
     /// Liefert einen bestimmten Song oder 404, wenn die Id nicht existiert.
     /// </summary>
@@ -135,7 +157,7 @@ public class SongsController : ControllerBase
     /// GET /api/songs/clean/{genre}
     /// LINQ-Endpunkt: Liefert nicht explizite Songs eines Genres.
     /// </summary>
-    [HttpGet("clean/{genre}")]
+    [HttpGet("clean/{genre}")]  
     [ProducesResponseType(typeof(IReadOnlyList<SongResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<SongResponseDto>>> GetCleanByGenre(MusicGenre genre, CancellationToken cancellationToken)
     {

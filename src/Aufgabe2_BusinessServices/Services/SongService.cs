@@ -36,6 +36,36 @@ public class SongService : ISongService
             .ToListAsync(cancellationToken);
 
     /// <summary>
+    /// Lädt nur eine Seite der Songs.
+    /// Wichtig für Pagination: immer zuerst stabil sortieren, dann Skip und Take anwenden.
+    /// </summary>
+    public async Task<PagedResultDto<SongResponseDto>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1)
+        {
+            throw new ArgumentException("Page must be at least 1.");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            throw new ArgumentException("PageSize must be between 1 and 100.");
+        }
+
+        IQueryable<Song> query = _db.Songs
+            .Include(s => s.Artist)
+            .OrderBy(s => s.Title);
+
+        int totalCount = await query.CountAsync(cancellationToken);
+        List<SongResponseDto> items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => SongMapper.ToDto(s))
+            .ToListAsync(cancellationToken);
+
+        return new PagedResultDto<SongResponseDto>(items, page, pageSize, totalCount);
+    }
+
+    /// <summary>
     /// Lädt einen Song per Id.
     /// Wenn kein Song existiert, wird eine fachliche NotFoundException geworfen.
     /// </summary>

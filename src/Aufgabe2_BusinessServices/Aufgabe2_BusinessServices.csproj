@@ -10,10 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Model\"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\Aufgabe1_ORMapping\Aufgabe1_ORMapping.csproj" />
     </ItemGroup>
 
