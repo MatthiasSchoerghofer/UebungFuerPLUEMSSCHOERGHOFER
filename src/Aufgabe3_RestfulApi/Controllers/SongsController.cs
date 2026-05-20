@@ -180,7 +180,8 @@ public class SongsController : ControllerBase
     [HttpGet("popular")]
     [ProducesResponseType(typeof(IReadOnlyList<PopularSongDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IReadOnlyList<PopularSongDto>>> GetPopular([FromQuery] long minStreams = 1_000_000, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<IReadOnlyList<PopularSongDto>>> GetPopular(
+        [FromQuery] long minStreams = 1_000_000, CancellationToken cancellationToken = default)
     {
         if (minStreams < 0)
         {

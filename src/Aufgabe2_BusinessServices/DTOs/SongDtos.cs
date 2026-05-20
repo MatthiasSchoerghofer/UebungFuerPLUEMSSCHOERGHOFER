@@ -25,7 +25,7 @@ public record PagedResultDto<T>(
     int Page,
     int PageSize,
     int TotalCount)
-{
+{                       //7 Songs 2 songs pro page --> 7/2 = 3.5 ceiling --> 4 
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
