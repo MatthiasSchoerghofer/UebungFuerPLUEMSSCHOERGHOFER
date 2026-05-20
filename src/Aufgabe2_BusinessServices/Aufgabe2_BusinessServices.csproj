@@ -6,7 +6,6 @@
 
     <ItemGroup>
         <PackageReference Include="Bogus"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     </ItemGroup>
 
     <ItemGroup>

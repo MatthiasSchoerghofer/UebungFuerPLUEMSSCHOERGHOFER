@@ -1,46 +1,52 @@
-using Aufgabe1_ORMapping.Infrastructure;
 using Aufgabe1_ORMapping.Model;
 using Aufgabe2_BusinessServices.Cmds;
 using Aufgabe2_BusinessServices.DTOs;
 using Aufgabe2_BusinessServices.Exceptions;
 using Aufgabe2_BusinessServices.Mapper;
-using Microsoft.EntityFrameworkCore;
 
 namespace Aufgabe2_BusinessServices.Services;
 
 /// <summary>
 /// SongService enthält die Businesslogik der Song-App.
-/// Er verwendet Entities und DbContext intern, gibt nach außen aber nur DTOs zurück.
+/// Er verwendet Entities intern, gibt nach außen aber nur DTOs zurück.
+/// Für Aufgabe 2 arbeitet er bewusst ohne DbContext auf einer übergebenen Entity-Liste.
 /// </summary>
 public class SongService : ISongService
 {
-    private readonly AppDbContext _db;
+    private readonly IList<Song> _songs;
 
     /// <summary>
-    /// Der DbContext wird per Dependency Injection übergeben.
-    /// So bleibt der Service testbar und kennt keine konkrete Datenbankdatei.
+    /// Die Entity-Liste wird von außen übergeben.
+    /// Dadurch kann Aufgabe 2 ohne echte Datenbank und ohne EF-Core-Testsetup geprüft werden.
     /// </summary>
-    public SongService(AppDbContext db)
+    public SongService(IList<Song> songs)
     {
-        _db = db;
+        _songs = songs;
     }
 
     /// <summary>
-    /// Lädt alle Songs inklusive Artist und mappt sie zu Response-DTOs.
+    /// Lädt alle Songs und mappt sie zu Response-DTOs.
     /// </summary>
-    public async Task<IReadOnlyList<SongResponseDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await _db.Songs
-            .Include(s => s.Artist)
+    public Task<IReadOnlyList<SongResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<SongResponseDto> result = _songs
             .OrderBy(s => s.Title)
-            .Select(s => SongMapper.ToDto(s))
-            .ToListAsync(cancellationToken);
+            .Select(SongMapper.ToDto)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
 
     /// <summary>
     /// Lädt nur eine Seite der Songs.
     /// Wichtig für Pagination: immer zuerst stabil sortieren, dann Skip und Take anwenden.
     /// </summary>
-    public async Task<PagedResultDto<SongResponseDto>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResultDto<SongResponseDto>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (page < 1)
         {
             throw new ArgumentException("Page must be at least 1.");
@@ -51,171 +57,232 @@ public class SongService : ISongService
             throw new ArgumentException("PageSize must be between 1 and 100.");
         }
 
-        IQueryable<Song> query = _db.Songs
-            .Include(s => s.Artist)
-            .OrderBy(s => s.Title);
-
-        int totalCount = await query.CountAsync(cancellationToken);
-        List<SongResponseDto> items = await query
+        int totalCount = _songs.Count;
+        List<SongResponseDto> items = _songs
+            .OrderBy(s => s.Title)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(s => SongMapper.ToDto(s))
-            .ToListAsync(cancellationToken);
+            .Select(SongMapper.ToDto)
+            .ToList();
 
-        return new PagedResultDto<SongResponseDto>(items, page, pageSize, totalCount);
+        return Task.FromResult(new PagedResultDto<SongResponseDto>(items, page, pageSize, totalCount));
     }
 
     /// <summary>
     /// Lädt einen Song per Id.
     /// Wenn kein Song existiert, wird eine fachliche NotFoundException geworfen.
     /// </summary>
-    public async Task<SongResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public Task<SongResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        Song song = await FindSongOrThrowAsync(id, cancellationToken);
-        return SongMapper.ToDto(song);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Song song = FindSongOrThrow(id);
+        return Task.FromResult(SongMapper.ToDto(song));
     }
 
     /// <summary>
     /// Erstellt einen neuen Song.
-    /// Der Service kümmert sich darum, ob der Artist bereits existiert oder neu angelegt werden muss.
+    /// Der Service kümmert sich darum, ob der Artist in der Liste bereits existiert oder neu angelegt werden muss.
     /// </summary>
-    public async Task<SongResponseDto> UploadSongAsync(UploadSongCmd cmd, CancellationToken cancellationToken = default)
+    public Task<SongResponseDto> UploadSongAsync(UploadSongCmd cmd, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ValidateUpload(cmd);
 
-        Artist artist = await GetOrCreateArtistAsync(cmd.ArtistName, cmd.ArtistCountry, cancellationToken);
+        Artist artist = GetOrCreateArtist(cmd.ArtistName, cmd.ArtistCountry);
         Song song = SongMapper.ToEntity(cmd, artist, DateTime.UtcNow);
+        song.Id = NextSongId();
+        song.ArtistId = artist.Id;
 
-        _db.Songs.Add(song);
-        await _db.SaveChangesAsync(cancellationToken);
+        _songs.Add(song);
+        artist.Songs.Add(song);
 
-        return SongMapper.ToDto(song);
+        return Task.FromResult(SongMapper.ToDto(song));
     }
 
     /// <summary>
     /// Aktualisiert nur die Stream-Anzahl.
     /// Kleine, fokussierte Update-Methoden sind in Prüfungen leichter zu testen.
     /// </summary>
-    public async Task<SongResponseDto> UpdateStreamsAsync(int id, UpdateStreamsCmd cmd, CancellationToken cancellationToken = default)
+    public Task<SongResponseDto> UpdateStreamsAsync(int id, UpdateStreamsCmd cmd, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (cmd.Streams < 0)
         {
             throw new ArgumentException("Streams must not be negative.");
         }
 
-        Song song = await FindSongOrThrowAsync(id, cancellationToken);
+        Song song = FindSongOrThrow(id);
         song.Streams = cmd.Streams;
-        await _db.SaveChangesAsync(cancellationToken);
 
-        return SongMapper.ToDto(song);
+        return Task.FromResult(SongMapper.ToDto(song));
     }
 
     /// <summary>
-    /// Löscht einen Song inklusive seiner Requests, weil im DbContext Cascade Delete eingestellt ist.
+    /// Löscht einen Song inklusive seiner Requests aus der In-Memory-Liste.
     /// </summary>
-    public async Task DeleteSongAsync(int id, CancellationToken cancellationToken = default)
+    public Task DeleteSongAsync(int id, CancellationToken cancellationToken = default)
     {
-        Song song = await FindSongOrThrowAsync(id, cancellationToken);
-        _db.Songs.Remove(song);
-        await _db.SaveChangesAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Song song = FindSongOrThrow(id);
+        song.Artist.Songs.Remove(song);
+        _songs.Remove(song);
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Verwendet die LINQ-Query aus dem DbContext und mappt das Ergebnis auf ein kleines DTO.
+    /// Filtert die Entity-Liste mit LINQ und mappt das Ergebnis auf ein kleines DTO.
     /// </summary>
-    public async Task<IReadOnlyList<PopularSongDto>> GetPopularSongsAsync(long minStreams, CancellationToken cancellationToken = default) =>
-        await _db.QueryPopularSongs(minStreams)
-            .Select(s => SongMapper.ToPopularDto(s))
-            .ToListAsync(cancellationToken);
+    public Task<IReadOnlyList<PopularSongDto>> GetPopularSongsAsync(long minStreams, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<PopularSongDto> result = _songs
+            .Where(s => s.Streams >= minStreams)
+            .OrderByDescending(s => s.Streams)
+            .Select(SongMapper.ToPopularDto)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
 
     /// <summary>
-    /// Verwendet die LINQ-Query aus dem DbContext für saubere Songs eines Genres.
+    /// Filtert die Entity-Liste mit LINQ für saubere Songs eines Genres.
     /// </summary>
-    public async Task<IReadOnlyList<SongResponseDto>> GetCleanSongsByGenreAsync(MusicGenre genre, CancellationToken cancellationToken = default) =>
-        await _db.QueryCleanSongsByGenre(genre)
-            .Select(s => SongMapper.ToDto(s))
-            .ToListAsync(cancellationToken);
+    public Task<IReadOnlyList<SongResponseDto>> GetCleanSongsByGenreAsync(MusicGenre genre, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<SongResponseDto> result = _songs
+            .Where(s => s.Genre == genre && !s.IsExplicit)
+            .OrderBy(s => s.DurationSeconds)
+            .Select(SongMapper.ToDto)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
 
     /// <summary>
     /// Erstellt einen Song-Request für einen vorhandenen Song.
     /// Die SongId kommt aus der Route, die restlichen Daten aus dem Request-DTO.
     /// </summary>
-    public async Task<SongRequestResponseDto> RequestSongAsync(int songId, RequestSongCmd cmd, CancellationToken cancellationToken = default)
+    public Task<SongRequestResponseDto> RequestSongAsync(int songId, RequestSongCmd cmd, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(cmd.RequestedBy))
         {
             throw new ArgumentException("RequestedBy is required.");
         }
 
-        Song song = await FindSongOrThrowAsync(songId, cancellationToken);
+        Song song = FindSongOrThrow(songId);
         SongRequest request = new()
         {
+            Id = NextRequestId(),
             Song = song,
+            SongId = song.Id,
             RequestedBy = cmd.RequestedBy.Trim(),
             Message = string.IsNullOrWhiteSpace(cmd.Message) ? null : cmd.Message.Trim(),
             RequestedAt = DateTime.UtcNow,
             Status = SongRequestStatus.Pending
         };
 
-        _db.SongRequests.Add(request);
-        await _db.SaveChangesAsync(cancellationToken);
+        song.Requests.Add(request);
 
-        return SongMapper.ToDto(request);
+        return Task.FromResult(SongMapper.ToDto(request));
     }
 
     /// <summary>
-    /// Liefert alle offenen Requests über eine zentrale LINQ-Query.
+    /// Liefert alle offenen Requests über LINQ auf der Entity-Liste.
     /// </summary>
-    public async Task<IReadOnlyList<SongRequestResponseDto>> GetPendingRequestsAsync(CancellationToken cancellationToken = default) =>
-        await _db.QueryPendingRequests()
-            .Select(r => SongMapper.ToDto(r))
-            .ToListAsync(cancellationToken);
+    public Task<IReadOnlyList<SongRequestResponseDto>> GetPendingRequestsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<SongRequestResponseDto> result = AllRequests()
+            .Where(r => r.Status == SongRequestStatus.Pending)
+            .OrderBy(r => r.RequestedAt)
+            .Select(SongMapper.ToDto)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
 
     /// <summary>
     /// Setzt einen Request von Pending auf Played.
     /// </summary>
-    public async Task<SongRequestResponseDto> MarkRequestAsPlayedAsync(int requestId, CancellationToken cancellationToken = default)
+    public Task<SongRequestResponseDto> MarkRequestAsPlayedAsync(int requestId, CancellationToken cancellationToken = default)
     {
-        SongRequest request = await _db.SongRequests
-            .Include(r => r.Song)
-            .ThenInclude(s => s.Artist)
-            .FirstOrDefaultAsync(r => r.Id == requestId, cancellationToken)
+        cancellationToken.ThrowIfCancellationRequested();
+
+        SongRequest request = AllRequests().FirstOrDefault(r => r.Id == requestId)
             ?? throw new NotFoundException($"Song request with id {requestId} was not found.");
 
         request.Status = SongRequestStatus.Played;
-        await _db.SaveChangesAsync(cancellationToken);
 
-        return SongMapper.ToDto(request);
+        return Task.FromResult(SongMapper.ToDto(request));
     }
 
     /// <summary>
     /// Gemeinsame Hilfsmethode, damit "Song nicht gefunden" überall gleich behandelt wird.
     /// </summary>
-    private async Task<Song> FindSongOrThrowAsync(int id, CancellationToken cancellationToken) =>
-        await _db.Songs
-            .Include(s => s.Artist)
-            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
+    private Song FindSongOrThrow(int id) =>
+        _songs.FirstOrDefault(s => s.Id == id)
         ?? throw new NotFoundException($"Song with id {id} was not found.");
 
     /// <summary>
-    /// Sucht einen Artist nach Namen oder legt ihn an, wenn er noch nicht existiert.
+    /// Sucht einen Artist nach Namen in der Liste oder legt ihn an, wenn er noch nicht existiert.
     /// </summary>
-    private async Task<Artist> GetOrCreateArtistAsync(string artistName, string? country, CancellationToken cancellationToken)
+    private Artist GetOrCreateArtist(string artistName, string? country)
     {
         string normalizedName = artistName.Trim();
-        Artist? artist = await _db.Artists.FirstOrDefaultAsync(a => a.Name == normalizedName, cancellationToken);
+        Artist? artist = _songs
+            .Select(s => s.Artist)
+            .DistinctBy(a => a.Id)
+            .FirstOrDefault(a => a.Name == normalizedName);
+
         if (artist is not null)
         {
             return artist;
         }
 
-        artist = new Artist
+        return new Artist
         {
+            Id = NextArtistId(),
             Name = normalizedName,
             Country = string.IsNullOrWhiteSpace(country) ? null : country.Trim()
         };
-        _db.Artists.Add(artist);
-        return artist;
+    }
+
+    /// <summary>
+    /// Sammelt alle Requests aus den Songs.
+    /// </summary>
+    private IEnumerable<SongRequest> AllRequests() => _songs.SelectMany(s => s.Requests);
+
+    /// <summary>
+    /// Simuliert Identity-IDs für neue Songs.
+    /// </summary>
+    private int NextSongId() => _songs.Count == 0 ? 1 : _songs.Max(s => s.Id) + 1;
+
+    /// <summary>
+    /// Simuliert Identity-IDs für neue Artists.
+    /// </summary>
+    private int NextArtistId()
+    {
+        List<Artist> artists = _songs.Select(s => s.Artist).DistinctBy(a => a.Id).ToList();
+        return artists.Count == 0 ? 1 : artists.Max(a => a.Id) + 1;
+    }
+
+    /// <summary>
+    /// Simuliert Identity-IDs für neue Requests.
+    /// </summary>
+    private int NextRequestId()
+    {
+        List<SongRequest> requests = AllRequests().ToList();
+        return requests.Count == 0 ? 1 : requests.Max(r => r.Id) + 1;
     }
 
     /// <summary>

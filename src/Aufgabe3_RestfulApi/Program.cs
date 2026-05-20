@@ -1,7 +1,6 @@
-using Aufgabe1_ORMapping.Infrastructure;
+using Aufgabe1_ORMapping.Model;
 using Aufgabe2_BusinessServices.Services;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Aufgabe3_RestfulApi;
 
@@ -25,20 +24,12 @@ public class Program {
         builder.Services.AddControllers();
 
         builder.Services.AddValidation();
-        builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=songapp.db"));
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+        builder.Services.AddSingleton<IList<Song>>(_ => []);
         builder.Services.AddScoped<ISongService, SongService>();
     
         // STEP 2: Configuring ASP.NET Core request pipeline
         var app = builder.Build();
-
-        // Für die Übung wird die SQLite-Datenbank automatisch erstellt.
-        // In größeren Projekten würde man dafür Migrationen verwenden.
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
-        }
 
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {

@@ -1,53 +1,40 @@
-using Aufgabe1_ORMapping.Infrastructure;
 using Aufgabe1_ORMapping.Model;
 using Aufgabe2_BusinessServices.Cmds;
 using Aufgabe2_BusinessServices.Exceptions;
 using Aufgabe2_BusinessServices.Services;
 using Aufgabe2_BusinessServices.TestFixtures;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 
 namespace Aufgabe2_BusinessServices.Test;
 
 /// <summary>
 /// SongServiceTests prüfen die Businesslogik ohne HTTP.
-/// Der Service verwendet eine echte SQLite-In-Memory-Datenbank.
+/// Der Service verwendet eine fertige Entity-Liste statt einer Datenbank.
 /// </summary>
 public class SongServiceTests
 {
     /// <summary>
-    /// Erstellt DbContext und Service für einen Test.
+    /// Erstellt Entity-Liste und Service für einen Test.
     /// </summary>
-    private static (AppDbContext Db, SongService Service) CreateService()
+    private static (List<Song> Songs, SongService Service) CreateService(bool seeded = false)
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
-        connection.Open();
- 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        var db = new AppDbContext(options);
-        db.Database.EnsureCreated();
-        return (db, new SongService(db));
+        List<Song> songs = seeded ? SongTestDataFactory.SongList() : [];
+        return (songs, new SongService(songs));
     }
 
     /// <summary>
-    /// Prüft, ob UploadSongAsync Song und Artist speichert und ein DTO zurückgibt.
+    /// Prüft, ob UploadSongAsync einen Song in der Entity-Liste anlegt und ein DTO zurückgibt.
     /// </summary>
     [Fact]
     public async Task UploadSongAsync_CreatesSongAndArtist()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            var result = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+        var (songs, service) = CreateService();
 
-            Assert.True(result.Id > 0);
-            Assert.Equal("Around the World", result.Title);
-            Assert.Single(db.Artists);
-            Assert.Single(db.Songs);
-        }
+        var result = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+
+        Assert.True(result.Id > 0);
+        Assert.Equal("Around the World", result.Title);
+        Assert.Single(songs);
+        Assert.Equal("Daft Punk", songs[0].Artist.Name);
     }
 
     /// <summary>
@@ -56,17 +43,14 @@ public class SongServiceTests
     [Fact]
     public async Task RequestSongAsync_CreatesPendingRequest()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            var song = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+        var (songs, service) = CreateService();
 
-            var request = await service.RequestSongAsync(song.Id, SongTestDataFactory.RequestSongCmd());
+        var song = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+        var request = await service.RequestSongAsync(song.Id, SongTestDataFactory.RequestSongCmd());
 
-            Assert.Equal(SongRequestStatus.Pending, request.Status);
-            Assert.Equal(song.Id, request.SongId);
-            Assert.Single(db.SongRequests);
-        }
+        Assert.Equal(SongRequestStatus.Pending, request.Status);
+        Assert.Equal(song.Id, request.SongId);
+        Assert.Single(songs[0].Requests);
     }
 
     /// <summary>
@@ -75,17 +59,15 @@ public class SongServiceTests
     [Fact]
     public async Task GetPopularSongsAsync_ReturnsOnlySongsAboveMinimum()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Hit", "Artist A", 2_500_000));
-            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Small Song", "Artist B", 100));
+        var (_, service) = CreateService();
 
-            var result = await service.GetPopularSongsAsync(1_000_000);
+        await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Hit", "Artist A", 2_500_000));
+        await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Small Song", "Artist B", 100));
 
-            Assert.Single(result);
-            Assert.All(result, song => Assert.True(song.Streams >= 1_000_000));
-        }
+        var result = await service.GetPopularSongsAsync(1_000_000);
+
+        Assert.Single(result);
+        Assert.All(result, song => Assert.True(song.Streams >= 1_000_000));
     }
 
     /// <summary>
@@ -94,23 +76,21 @@ public class SongServiceTests
     [Fact]
     public async Task GetPagedAsync_ReturnsRequestedPage()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Alpha", "Artist A", 1));
-            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Beta", "Artist B", 2));
-            await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Gamma", "Artist C", 3));
+        var (_, service) = CreateService();
 
-            var result = await service.GetPagedAsync(page: 2, pageSize: 2);
+        await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Alpha", "Artist A", 1));
+        await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Beta", "Artist B", 2));
+        await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd("Gamma", "Artist C", 3));
 
-            Assert.Equal(3, result.TotalCount);
-            Assert.Equal(2, result.Page);
-            Assert.Equal(2, result.PageSize);
-            Assert.Single(result.Items);
-            Assert.Equal("Gamma", result.Items[0].Title);
-            Assert.True(result.HasPreviousPage);
-            Assert.False(result.HasNextPage);
-        }
+        var result = await service.GetPagedAsync(page: 2, pageSize: 2);
+
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(2, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Single(result.Items);
+        Assert.Equal("Gamma", result.Items[0].Title);
+        Assert.True(result.HasPreviousPage);
+        Assert.False(result.HasNextPage);
     }
 
     /// <summary>
@@ -119,11 +99,9 @@ public class SongServiceTests
     [Fact]
     public async Task GetByIdAsync_UnknownId_ThrowsNotFoundException()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(999));
-        }
+        var (_, service) = CreateService();
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(999));
     }
 
     /// <summary>
@@ -132,12 +110,10 @@ public class SongServiceTests
     [Fact]
     public async Task UpdateStreamsAsync_NegativeStreams_ThrowsArgumentException()
     {
-        var (db, service) = CreateService();
-        await using (db)
-        {
-            var song = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+        var (_, service) = CreateService();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateStreamsAsync(song.Id, new UpdateStreamsCmd(-1)));
-        }
+        var song = await service.UploadSongAsync(SongTestDataFactory.UploadSongCmd());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateStreamsAsync(song.Id, new UpdateStreamsCmd(-1)));
     }
 }

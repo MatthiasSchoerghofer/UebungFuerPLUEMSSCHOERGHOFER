@@ -2,6 +2,8 @@ using Aufgabe2_BusinessServices.Cmds;
 using Aufgabe2_BusinessServices.DTOs;
 using Aufgabe2_BusinessServices.Exceptions;
 using Aufgabe2_BusinessServices.Services;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aufgabe3_RestfulApi.Controllers;
@@ -15,13 +17,15 @@ namespace Aufgabe3_RestfulApi.Controllers;
 public class SongRequestsController : ControllerBase
 {
     private readonly ISongService _service;
+    private readonly IValidator<RequestSongCmd> _requestSongValidator;
 
     /// <summary>
     /// Der Controller bekommt den Service per Dependency Injection.
     /// </summary>
-    public SongRequestsController(ISongService service)
+    public SongRequestsController(ISongService service, IValidator<RequestSongCmd> requestSongValidator)
     {
         _service = service;
+        _requestSongValidator = requestSongValidator;
     }
 
     /// <summary>
@@ -34,6 +38,12 @@ public class SongRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SongRequestResponseDto>> RequestSong(int songId, RequestSongCmd cmd, CancellationToken cancellationToken)
     {
+        ValidationResult validationResult = await _requestSongValidator.ValidateAsync(cmd, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(new ValidationProblemDetails(ToErrorDictionary(validationResult)));
+        }
+
         try
         {
             SongRequestResponseDto created = await _service.RequestSongAsync(songId, cmd, cancellationToken);
@@ -78,4 +88,14 @@ public class SongRequestsController : ControllerBase
             return NotFound(new ProblemDetails { Detail = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Wandelt FluentValidation-Fehler in das ValidationProblem-Format von ASP.NET Core um.
+    /// </summary>
+    private static Dictionary<string, string[]> ToErrorDictionary(ValidationResult validationResult) =>
+        validationResult.Errors
+            .GroupBy(error => error.PropertyName)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(error => error.ErrorMessage).ToArray());
 }
