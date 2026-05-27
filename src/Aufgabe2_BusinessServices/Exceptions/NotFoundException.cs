@@ -2,7 +2,7 @@ namespace Aufgabe2_BusinessServices.Exceptions;
 
 /// <summary>
 /// Eigene Exception für "nicht gefunden".
-/// Der Controller übersetzt diese Exception später in HTTP 404 NotFound.
+/// Die Minimal API übersetzt diese Exception später in HTTP 404 NotFound.
 /// </summary>
 public class NotFoundException : Exception
 {

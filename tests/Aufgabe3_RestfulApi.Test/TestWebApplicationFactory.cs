@@ -1,42 +1,55 @@
-using Aufgabe2_BusinessServices.Services;
+using Aufgabe1_ORMapping.Infrastructure;
 using Aufgabe3_RestfulApi;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NSubstitute;
+using System.Data;
 
 namespace Aufgabe3_RestfulApi.Test;
 
 /// <summary>
-/// TestWebApplicationFactory startet die REST-API im Speicher für Controller-Tests.
-/// Der echte SongService wird durch ein Mock-Objekt ersetzt.
+/// TestWebApplicationFactory startet die REST-API im Speicher für Minimal-API-Tests.
+/// Die App verwendet dabei einen echten AppDbContext mit SQLite-In-Memory.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    /// <summary>
-    /// Mock für die Service-Schicht.
-    /// Damit testen Aufgabe-3-Tests nur Controller, Routing, JSON, Statuscodes und Validation.
-    /// </summary>
-    public ISongService SongServiceMock { get; } = Substitute.For<ISongService>();
+    private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
     /// <summary>
-    /// Client ist der HTTP-Client, mit dem Tests echte Requests an die Controller schicken.
+    /// Client ist der HTTP-Client, mit dem Tests echte Requests an die Minimal API schicken.
     /// </summary>
     public HttpClient Client => CreateClient();
 
     /// <summary>
-    /// ConfigureWebHost überschreibt Services nur für Tests.
-    /// Wichtig: Es wird keine Datenbank und keine echte Aufgabe-2-Serviceklasse verwendet.
+    /// ConfigureWebHost überschreibt nur die Datenbankverbindung für Tests.
+    /// Der echte SongService bleibt registriert und arbeitet mit dem Test-DbContext.
     /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        if (_connection.State != ConnectionState.Open)
+        {
+            _connection.Open();
+        }
+
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<ISongService>();
-            services.AddSingleton(SongServiceMock);
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.AddDbContext<AppDbContext>(options => options.UseSqlite(_connection));
         });
 
         builder.UseEnvironment("Testing");
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        if (disposing)
+        {
+            _connection.Dispose();
+        }
     }
 }

@@ -6,7 +6,7 @@ namespace Aufgabe2_BusinessServices.Services;
 
 /// <summary>
 /// Interface für den SongService.
-/// Controller hängen vom Interface ab, damit man den Service in Tests leicht ersetzen kann.
+/// Die Minimal API hängt vom Interface ab, damit HTTP-Schicht und Businesslogik getrennt bleiben.
 /// </summary>
 public interface ISongService
 {

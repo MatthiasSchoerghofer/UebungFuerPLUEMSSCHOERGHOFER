@@ -1,10 +1,7 @@
 using Aufgabe1_ORMapping.Model;
 using Aufgabe2_BusinessServices.Cmds;
 using Aufgabe2_BusinessServices.DTOs;
-using Aufgabe2_BusinessServices.Exceptions;
-using Aufgabe2_BusinessServices.Services;
 using Aufgabe2_BusinessServices.TestFixtures;
-using NSubstitute;
 using SPG_Helper;
 using System.Net;
 using System.Net.Http.Json;
@@ -18,8 +15,8 @@ namespace Aufgabe3_RestfulApi.Test;
 public class SequentialCollection { }
 
 /// <summary>
-/// Aufgabe3Tests prüfen die REST-Endpunkte mit Controller, Routing, JSON, Validation und HTTP-Statuscodes.
-/// Die Service-Schicht wird gemockt, damit Aufgabe 3 unabhängig von Aufgabe 2 läuft.
+/// Aufgabe3Tests prüfen die REST-Endpunkte mit Minimal API, Routing, JSON, Validation,
+/// HTTP-Statuscodes und echtem DbContext.
 /// </summary>
 [Collection("Sequential")]
 public class Aufgabe3Tests : IDisposable
@@ -27,12 +24,11 @@ public class Aufgabe3Tests : IDisposable
     private readonly TestWebApplicationFactory _factory;
 
     /// <summary>
-    /// Pro Testklasse wird eine Factory erstellt und der Service-Mock mit Rückgabewerten vorbereitet.
+    /// Pro Test wird eine Factory mit eigener SQLite-In-Memory-Datenbank erstellt.
     /// </summary>
     public Aufgabe3Tests()
     {
         _factory = new TestWebApplicationFactory();
-        ConfigureServiceMock(_factory.SongServiceMock);
     }
 
     /// <summary>
@@ -44,10 +40,10 @@ public class Aufgabe3Tests : IDisposable
     }
 
     /// <summary>
-    /// Endpunkt-Test: GET /api/songs liefert 200 OK und eine Liste.
+    /// Endpunkt-Test: GET /api/songs liefert 200 OK und eine Liste aus der Datenbank.
     /// </summary>
     [Fact]
-    public async Task GetSongs_ReturnsAllSongs()
+    public async Task GetSongs_ReturnsAllSongsFromDbContext()
     {
         using HttpClient client = _factory.Client;
 
@@ -55,7 +51,7 @@ public class Aufgabe3Tests : IDisposable
 
         Assert.Equal(HttpStatusCode.OK, status.StatusCode);
         Assert.NotNull(result);
-        Assert.True(result.Length >= 2);
+        Assert.True(result.Length >= 4);
     }
 
     /// <summary>
@@ -72,12 +68,12 @@ public class Aufgabe3Tests : IDisposable
         Assert.NotNull(result);
         Assert.Equal(1, result.Page);
         Assert.Equal(2, result.PageSize);
-        Assert.True(result.TotalCount >= 2);
+        Assert.True(result.TotalCount >= 4);
         Assert.True(result.Items.Count <= 2);
     }
 
     /// <summary>
-    /// Endpunkt-Test: Ungültige Pagination wird im Controller abgelehnt, bevor der Service aufgerufen wird.
+    /// Endpunkt-Test: Ungültige Pagination wird von der Minimal API abgelehnt.
     /// </summary>
     [Fact]
     public async Task GetSongsPaged_InvalidPage_ReturnsBadRequest()
@@ -87,11 +83,10 @@ public class Aufgabe3Tests : IDisposable
         HttpResponseMessage response = await client.GetAsync("/api/songs/paged?page=0&pageSize=2");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        _ = _factory.SongServiceMock.DidNotReceive().GetPagedAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
-    /// Endpunkt-Test: POST /api/songs legt einen Song an und liefert 201 Created.
+    /// Endpunkt-Test: POST /api/songs legt einen Song in der Datenbank an und liefert 201 Created.
     /// </summary>
     [Fact]
     public async Task PostSong_ValidPayload_ReturnsCreated()
@@ -105,13 +100,16 @@ public class Aufgabe3Tests : IDisposable
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(result);
         Assert.Equal("Digital Love", result.Title);
+
+        var (_, songs) = await client.GetHttpContent<SongResponseDto[]>("/api/songs");
+        Assert.Contains(songs!, song => song.Title == "Digital Love");
     }
 
     /// <summary>
-    /// Endpunkt-Test: POST /api/songs validiert im Controller und ruft den Service bei Fehlern nicht auf.
+    /// Endpunkt-Test: POST /api/songs validiert Commands und liefert bei Fehlern 400 BadRequest.
     /// </summary>
     [Fact]
-    public async Task PostSong_InvalidPayload_ReturnsBadRequestWithoutCallingService()
+    public async Task PostSong_InvalidPayload_ReturnsBadRequest()
     {
         using HttpClient client = _factory.Client;
         UploadSongCmd cmd = SongTestDataFactory.UploadSongCmd(title: "", artistName: "Daft Punk", streams: 1_900_000);
@@ -119,12 +117,10 @@ public class Aufgabe3Tests : IDisposable
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/songs", cmd);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        _ = _factory.SongServiceMock.DidNotReceive().UploadSongAsync(Arg.Any<UploadSongCmd>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
-    /// Endpunkt-Test: GET /api/songs/popular ist ein LINQ-Endpunkt aus Controller-Sicht.
-    /// Die eigentliche Service-Logik ist gemockt.
+    /// Endpunkt-Test: GET /api/songs/popular verwendet LINQ und liefert nur Songs ab dem Minimum.
     /// </summary>
     [Fact]
     public async Task GetPopularSongs_ReturnsOnlySongsAboveMinimum()
@@ -139,7 +135,7 @@ public class Aufgabe3Tests : IDisposable
     }
 
     /// <summary>
-    /// Endpunkt-Test: GET /api/songs/clean/{genre} liefert DTOs aus dem gemockten Service.
+    /// Endpunkt-Test: GET /api/songs/clean/{genre} liefert nur nicht explizite Songs des Genres.
     /// </summary>
     [Fact]
     public async Task GetCleanSongsByGenre_ReturnsOnlyCleanGenreSongs()
@@ -158,7 +154,7 @@ public class Aufgabe3Tests : IDisposable
     }
 
     /// <summary>
-    /// Endpunkt-Test: Requesten eines Songs erstellt einen Pending-Request.
+    /// Endpunkt-Test: Requesten eines Songs erstellt einen Pending-Request in der Datenbank.
     /// </summary>
     [Fact]
     public async Task RequestSong_ExistingSong_ReturnsCreatedRequest()
@@ -174,20 +170,20 @@ public class Aufgabe3Tests : IDisposable
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(result);
         Assert.Equal(SongRequestStatus.Pending, result.Status);
+        Assert.Equal(songId, result.SongId);
     }
 
     /// <summary>
-    /// Endpunkt-Test: RequestSong validiert im Controller und ruft den Service bei Fehlern nicht auf.
+    /// Endpunkt-Test: RequestSong validiert Commands und liefert bei Fehlern 400 BadRequest.
     /// </summary>
     [Fact]
-    public async Task RequestSong_InvalidPayload_ReturnsBadRequestWithoutCallingService()
+    public async Task RequestSong_InvalidPayload_ReturnsBadRequest()
     {
         using HttpClient client = _factory.Client;
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/songs/1/requests", new RequestSongCmd("", "Bitte spielen."));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        _ = _factory.SongServiceMock.DidNotReceive().RequestSongAsync(Arg.Any<int>(), Arg.Any<RequestSongCmd>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -217,97 +213,8 @@ public class Aufgabe3Tests : IDisposable
         HttpResponseMessage response = await client.DeleteAsync($"/api/songs/{songId}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-    }
 
-    /// <summary>
-    /// Konfiguriert die Rückgabewerte des Service-Mocks für die Controller-Tests.
-    /// </summary>
-    private static void ConfigureServiceMock(ISongService service)
-    {
-        SongResponseDto[] songs =
-        [
-            new(1, "One More Time", "Daft Punk", 320, 2_100_000, MusicGenre.Electronic, false, new DateTime(2026, 5, 17, 8, 0, 0, DateTimeKind.Utc)),
-            new(2, "Bohemian Rhapsody", "Queen", 354, 3_500_000, MusicGenre.Rock, false, new DateTime(2026, 5, 17, 10, 0, 0, DateTimeKind.Utc)),
-            new(3, "Explicit Test Song", "Queen", 180, 1_200_000, MusicGenre.Rock, true, new DateTime(2026, 5, 17, 11, 0, 0, DateTimeKind.Utc))
-        ];
-
-        service.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<SongResponseDto>>(songs));
-
-        service.GetPagedAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                int page = call.ArgAt<int>(0);
-                int pageSize = call.ArgAt<int>(1);
-                IReadOnlyList<SongResponseDto> items = songs
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-                return Task.FromResult(new PagedResultDto<SongResponseDto>(items, page, pageSize, songs.Length));
-            });
-
-        service.GetByIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                int id = call.ArgAt<int>(0);
-                SongResponseDto song = songs.FirstOrDefault(s => s.Id == id)
-                    ?? throw new NotFoundException($"Song with id {id} was not found.");
-
-                return Task.FromResult(song);
-            });
-
-        service.UploadSongAsync(Arg.Any<UploadSongCmd>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                UploadSongCmd cmd = call.ArgAt<UploadSongCmd>(0);
-                SongResponseDto created = new(10, cmd.Title, cmd.ArtistName, cmd.DurationSeconds, cmd.Streams, cmd.Genre, cmd.IsExplicit, DateTime.UtcNow);
-                return Task.FromResult(created);
-            });
-
-        service.DeleteSongAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
-
-        service.GetPopularSongsAsync(Arg.Any<long>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                long minStreams = call.ArgAt<long>(0);
-                IReadOnlyList<PopularSongDto> result = songs
-                    .Where(s => s.Streams >= minStreams)
-                    .OrderByDescending(s => s.Streams)
-                    .Select(s => new PopularSongDto(s.Id, s.Title, s.ArtistName, s.Streams))
-                    .ToList();
-
-                return Task.FromResult(result);
-            });
-
-        service.GetCleanSongsByGenreAsync(Arg.Any<MusicGenre>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                MusicGenre genre = call.ArgAt<MusicGenre>(0);
-                IReadOnlyList<SongResponseDto> result = songs
-                    .Where(s => s.Genre == genre && !s.IsExplicit)
-                    .ToList();
-
-                return Task.FromResult(result);
-            });
-
-        service.RequestSongAsync(Arg.Any<int>(), Arg.Any<RequestSongCmd>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                int songId = call.ArgAt<int>(0);
-                RequestSongCmd cmd = call.ArgAt<RequestSongCmd>(1);
-                SongResponseDto song = songs.FirstOrDefault(s => s.Id == songId)
-                    ?? throw new NotFoundException($"Song with id {songId} was not found.");
-
-                SongRequestResponseDto created = new(20, cmd.RequestedBy, cmd.Message, DateTime.UtcNow, SongRequestStatus.Pending, song.Id, song.Title, song.ArtistName);
-                return Task.FromResult(created);
-            });
-
-        service.GetPendingRequestsAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<SongRequestResponseDto>>(
-            [
-                new(1, "Mahi", "Bitte spielen.", new DateTime(2026, 5, 17, 11, 0, 0, DateTimeKind.Utc), SongRequestStatus.Pending, 1, "One More Time", "Daft Punk")
-            ]));
+        HttpResponseMessage afterDelete = await client.GetAsync($"/api/songs/{songId}");
+        Assert.Equal(HttpStatusCode.NotFound, afterDelete.StatusCode);
     }
 }

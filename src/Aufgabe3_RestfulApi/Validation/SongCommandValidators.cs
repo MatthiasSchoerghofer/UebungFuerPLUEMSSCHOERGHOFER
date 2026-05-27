@@ -5,7 +5,7 @@ namespace Aufgabe3_RestfulApi.Validation;
 
 /// <summary>
 /// Validierung für POST /api/songs.
-/// Diese Regeln gehören zu Aufgabe 3, weil der Controller auch mit gemocktem Service korrekt antworten muss.
+/// Diese Regeln gehören zu Aufgabe 3, weil die Minimal API ungültige Commands sauber ablehnen muss.
 /// </summary>
 public class UploadSongCmdValidator : AbstractValidator<UploadSongCmd>
 {
