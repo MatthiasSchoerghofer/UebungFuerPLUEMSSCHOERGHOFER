@@ -1,0 +1,152 @@
+# Build output
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+artifacts/
+publish/
+.codex-build/
+
+# Test output
+TestResults/
+[Tt]est[Rr]esult*/
+coverage/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+*.trx
+*.binlog
+
+# .NET / NuGet generated files
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+*.nupkg
+*.snupkg
+packages/
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# User-specific .NET / Visual Studio files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.csproj.user
+*.vbproj.user
+*.fsproj.user
+.vs/
+
+# JetBrains Rider / ReSharper
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# VS Code local workspace files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Local app databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.ndf
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+nuget.config
+*.pfx
+*.publishsettings
+*.pubxml
+*.publishproj
+*.azurePubxml
+
+# Generated archives / hand-in artifacts
+*.zip
+*.7z
+*.rar
+POS_exam_dotnet_seed.zip
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+*.pid
+*.svclog
+*.tlog
+*.ilk
+*.pdb
+*.ipdb
+*.iobj
+*.obj
+*.pch
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.bak
+*.orig
+~$*
+*~
+
+# Tooling caches
+.fake/
+.ionide/
+.localhistory/
+.vshistory/
+BenchmarkDotNet.Artifacts/
+FakesAssemblies/
+OpenCover/
+
+# Node / frontend tooling, in case the template grows
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+
+# Python helper scripts / generated cache
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump

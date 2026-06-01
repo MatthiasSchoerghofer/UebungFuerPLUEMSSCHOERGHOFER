@@ -1,0 +1,6 @@
+@Aufgabe3_RestfulApi_HostAddress = http://localhost:5278
+
+GET {{Aufgabe3_RestfulApi_HostAddress}}/api/demos/
+Accept: application/json
+
+###

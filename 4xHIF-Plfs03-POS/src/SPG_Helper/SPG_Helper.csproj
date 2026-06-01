@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+		<BaseOutputPath>C:\Scratch\POS_exam_dotnet_seed\src\spg_helper</BaseOutputPath>
+	</PropertyGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+artifacts/
+artifacts/**
+**/C\:/**
+**/C\:/
+**/bin/**
+**/obj/**
+.idea/
+.idea/**
+.git/
+.git/**
+.github/
+.github/**
+zip-exclude.lst
+POS_exam_dotnet_seed-to-zip.sh
+POS_exam_dotnet_seed-to-zip.ps1
+nuget.config.intern
