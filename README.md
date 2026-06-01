@@ -14,3 +14,9 @@ Die Ordner koennen auf GitHub direkt geoeffnet, angesehen oder ueber **Code > Do
 ## Hinweise
 
 Die `.gitignore` schliesst lokale Build-Ausgaben und IDE-Dateien aus, zum Beispiel `bin/`, `obj/`, `.vs/`, `.idea/`, benutzerspezifische `*.user`-Dateien und lokale ZIP-Archive. Dadurch landen nur die relevanten Projektdateien im Repository.
+
+## Rechte und Haftung
+
+Dieses Repository ist nur zum Ansehen und Herunterladen gedacht. Es wird keine Garantie fuer Vollstaendigkeit, Richtigkeit oder Funktionsfaehigkeit uebernommen.
+
+Es ist keine Lizenz hinterlegt. Das bedeutet: Alle Rechte bleiben bei den jeweiligen Urhebern; ohne ausdrueckliche Erlaubnis werden keine zusaetzlichen Nutzungs-, Aenderungs- oder Weiterverbreitungsrechte eingeraeumt.
