@@ -35,8 +35,8 @@ public class Program
 
             var context = scope.ServiceProvider.GetRequiredService<BlogsContext>();
 
-            context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.EnsureCreatedAsync();
 
             await context.SeedWithBogusAsync();
         }

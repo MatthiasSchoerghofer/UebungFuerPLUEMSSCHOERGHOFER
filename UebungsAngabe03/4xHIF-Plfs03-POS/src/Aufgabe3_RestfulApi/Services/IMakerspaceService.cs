@@ -11,7 +11,7 @@ namespace Aufgabe3_RestfulApi.Services;
 public interface IMakerspaceService
 {
     public Task<PagedResultDto<DeviceListDto>> GetDevicePaged(DeviceType? deviceType, DeviceStatus? deviceStatus, string? name, int page, int pageSize, CancellationToken ct);
-    public Task<DeviceDetailDto> GetDeviceDetail(int id, CancellationToken ct);
+    public Task<DeviceDetailDto?> GetDeviceDetail(int id, CancellationToken ct);
     public Task<DeviceDetailDto> CreateDevice(CreateDeviceCmd cmd, CancellationToken ct);
     public Task<DeviceDetailDto> UpdateDeviceStatus(int id, UpdateDeviceStatusCmd cmd, CancellationToken ct);
     public Task<DeviceDetailDto> DeleteDevice(int id, CancellationToken ct);
