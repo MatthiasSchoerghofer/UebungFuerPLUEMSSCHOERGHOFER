@@ -31,6 +31,8 @@ artifacts/
 *.bak
 *.swp
 *.cache
+*.db-shm
+*.db-wal
 
 # OS files
 .DS_Store

@@ -8,7 +8,7 @@ namespace Aufgabe3_RestfulApi.Test;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    public IProjectService BlogServiceMock { get; } = Substitute.For<IProjectService>();
+    public IProjectService ProjectServiceMock { get; } = Substitute.For<IProjectService>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -19,7 +19,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             var descriptor = services.First(d => d.ServiceType == typeof(IProjectService));
             services.Remove(descriptor);
 
-            services.AddSingleton(BlogServiceMock);
+            services.AddSingleton(ProjectServiceMock);
         });
     }
 

@@ -15,9 +15,10 @@ public class ProjectService : IProjectService
         _context = context;
     }
     
-    public async Task<IQueryable<ProjectInfoDto>> GetProjectInfosAsync(string? status, string? country, string? skill, CancellationToken ct)
+    public async Task<List<ProjectInfoDto>> GetProjectInfosAsync(string? status, string? country, string? skill, CancellationToken ct)
     {
         IQueryable<Project> projects = _context.Projects
+            .AsNoTracking()
             .Include(p => p.Customer)
             .Include(p => p.Tasks)
             .ThenInclude(t => t.RequiredSkills)
@@ -48,21 +49,26 @@ public class ProjectService : IProjectService
                         s.Name == skill || s.Code == skill)));
         }
 
-        var result = await projects.ToListAsync(ct);
+        var result = await projects
+            .OrderBy(p => p.Deadline)
+            .ToListAsync(ct);
 
         return result
             .Select(ProjectMapper.ToProjectInfoDto)
-            .AsQueryable();    }
+            .ToList();
+    }
 
     
-    public async Task<IQueryable<EmployeeWorkloadDto>> GetEmployeeWorkloadsAsync(string? department, string? country, bool? onlyActive, int? minHours,
+    public async Task<List<EmployeeWorkloadDto>> GetEmployeeWorkloadsAsync(string? department, string? country, bool? onlyActive, int? minHours,
         CancellationToken ct)
     {
         IQueryable<Employee> employees = _context.Employees
-            .Include(e => e.Office).ThenInclude(o => o.Country)
-            .Include(e => e.AssignedTasks).ThenInclude(a => a.State)
-            .Include(e => e.ProjectAssignments).ThenInclude(pa => pa.Project).ThenInclude(p => p.Status)
-            .Include(e => e.Skills).ThenInclude(s => s.Name);
+            .AsNoTracking()
+            .Include(e => e.AssignedTasks)
+            .Include(e => e.ProjectAssignments)
+            .ThenInclude(pa => pa.Project)
+            .Include(e => e.Skills)
+            .Include(e => e.TimeEntries);
 
         if (!string.IsNullOrWhiteSpace(department))
         {
@@ -81,25 +87,31 @@ public class ProjectService : IProjectService
 
         if (minHours > 0)
         {
-            employees = employees.Where(e => e.TimeEntries.Any(t => t.Hours >= minHours));
+            employees = employees.Where(e => e.TimeEntries.Sum(t => t.Hours) >= minHours);
         }
 
-        var result = await employees.ToListAsync(ct);
+        var result = await employees
+            .OrderBy(e => e.FullName)
+            .ToListAsync(ct);
         
         return result.Select(ProjectMapper.ToEmployeeWorkloadDto)
-            .AsQueryable();
+            .ToList();
     }
 
-    public async Task<IQueryable<CriticalTaskDto>> GetCriticalTasksAsync(DateTime? dueBefore, TaskPriority? priority, bool? missingSkillsOnly, int? take,
+    public async Task<List<CriticalTaskDto>> GetCriticalTasksAsync(DateTime? dueBefore, TaskPriority? priority, bool? missingSkillsOnly, int? take,
         CancellationToken ct)
     {
-        take = take <= 0 ? 10 : take;
+        var takeCount = Math.Min(take ?? 10, 50);
+        var today = DateTime.Today;
 
         var tasks = _context.TaskItems
+            .AsNoTracking()
             .Include(t => t.Project)
+            .ThenInclude(p => p.Customer)
             .Include(t => t.Assignee)
-            .ThenInclude(a => a.Skills)
+            .ThenInclude(a => a!.Skills)
             .Include(t => t.RequiredSkills)
+            .Where(t => t.State != TaskState.Done || t.Priority == TaskPriority.Critical || t.DueDate < today)
             .AsQueryable();
 
         if (dueBefore.HasValue)
@@ -114,20 +126,18 @@ public class ProjectService : IProjectService
         
         if (missingSkillsOnly.HasValue && (bool)missingSkillsOnly)
         {
-            tasks = tasks.Where( t => t.Assignee != null && t.RequiredSkills
-                .Any(s => t.Assignee.Skills
-                    .Any(ps => ps.Id == s.Id)));
+            tasks = tasks.Where(t =>
+                t.RequiredSkills.Any() &&
+                (t.Assignee == null ||
+                 t.RequiredSkills.Any(s => t.Assignee.Skills.All(ps => ps.Id != s.Id))));
         }
         
-        if (take.HasValue)
-        {
-            var result = await tasks.Take((int)take).ToListAsync<TaskItem>(cancellationToken: ct);
-            return result.Select(ProjectMapper.ToCriticalTaskDto).AsQueryable();
-        }
-        else
-        {
-            var result = await tasks.ToListAsync(cancellationToken: ct);
-            return result.Select(ProjectMapper.ToCriticalTaskDto).AsQueryable();
-        }
+        var result = await tasks
+            .OrderBy(t => t.DueDate)
+            .ThenByDescending(t => t.Priority)
+            .Take(takeCount)
+            .ToListAsync(cancellationToken: ct);
+
+        return result.Select(ProjectMapper.ToCriticalTaskDto).ToList();
     } 
 }   

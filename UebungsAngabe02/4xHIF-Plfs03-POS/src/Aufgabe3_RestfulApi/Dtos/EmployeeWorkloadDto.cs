@@ -7,7 +7,7 @@ public record EmployeeWorkloadDto(
     string OfficeCountry,
     int OpenTaskCount,
     int ActiveProjectCount,
-    int BookedHours,
-    int AvgHoursPerTask,
+    decimal BookedHours,
+    decimal AvgHoursPerTask,
     List<string> Skills
     );

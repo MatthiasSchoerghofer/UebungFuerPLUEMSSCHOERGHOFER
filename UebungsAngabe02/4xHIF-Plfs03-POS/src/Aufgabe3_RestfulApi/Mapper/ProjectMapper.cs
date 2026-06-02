@@ -16,16 +16,20 @@ public class ProjectMapper
             project.Status,
             project.Deadline,
             project.Tasks.Count,
-            project.Tasks.Count(t => t.State == TaskState.InProgress),
-            project.Tasks.Count(t => t.State == TaskState.InProgress && t.DueDate > today),
+            project.Tasks.Count(t => t.State != TaskState.Done),
+            project.Tasks.Count(t => t.State != TaskState.Done && t.DueDate < today),
             project.Assignments.Select(a => a.EmployeeId).Distinct().Count(),
-            project.Budget - project.Tasks.SelectMany(t => t.TimeEntries).Where(te => te.Billable).Sum(te => te.Hours * te.Employee.HourlyRate),
+            project.Tasks.SelectMany(t => t.TimeEntries).Where(te => te.Billable).Sum(te => te.Hours * te.Employee.HourlyRate),
             project.Tasks.SelectMany(t => t.RequiredSkills).Select(s => s.Name).Distinct().OrderBy(s => s).ToList()
             );
     }
 
     public static EmployeeWorkloadDto ToEmployeeWorkloadDto(Employee employee)
     {
+        var bookedHours = employee.TimeEntries.Sum(t => t.Hours);
+        var assignedTaskCount = employee.AssignedTasks.Count;
+        var avgHoursPerTask = assignedTaskCount == 0 ? 0 : bookedHours / assignedTaskCount;
+
         return new EmployeeWorkloadDto(
             employee.FullName,
             employee.Department,
@@ -33,8 +37,8 @@ public class ProjectMapper
             employee.Office.Country,
             employee.AssignedTasks.Count(t => t.State is TaskState.InProgress or TaskState.Open),
             employee.ProjectAssignments.Count(p => p.Project.Status == ProjectStatus.Active),
-            employee.TimeEntries.Select(t => t.Hours).Count(),
-            employee.AssignedTasks.Count / employee.TimeEntries.Select(t => t.Hours).Count(),
+            bookedHours,
+            avgHoursPerTask,
             employee.Skills.Select(s => s.Name).Distinct().OrderBy(s => s).ToList()
             );
     }

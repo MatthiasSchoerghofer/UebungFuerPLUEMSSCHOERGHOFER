@@ -22,7 +22,7 @@ public class BlogService(BlogsContext db) : IBlogService
 
         return blogList.Select(BlogMapper.ToDto).ToList();
     }
-
+        
     public async Task<BlogDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         Blog? blog = await db.Blogs.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
@@ -31,7 +31,7 @@ public class BlogService(BlogsContext db) : IBlogService
     }
 
     public async Task<BlogDto> CreateAsync(CreateBlogDto dto, CancellationToken cancellationToken = default)
-    {
+    {   
         Blog blog = BlogMapper.ToEntity(dto);
 
         db.Blogs.Add(blog);
@@ -59,6 +59,7 @@ public class BlogService(BlogsContext db) : IBlogService
 
     public async Task<BlogDto> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
+        
         Blog? blog = await db.Blogs.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
         if (blog == null)

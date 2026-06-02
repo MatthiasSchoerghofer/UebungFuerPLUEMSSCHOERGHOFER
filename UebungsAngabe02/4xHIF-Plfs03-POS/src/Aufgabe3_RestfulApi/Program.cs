@@ -44,29 +44,54 @@ public class Program
         app.MapGet("/api/projects/dashboard",
                 async (string? status, string? customerCountry, string? skill, IProjectService projectService, CancellationToken ct) =>
                 {
+                    if (!string.IsNullOrWhiteSpace(status) &&
+                        !Enum.TryParse<ProjectStatus>(status, true, out _))
+                    {
+                        return Results.BadRequest("Invalid project status.");
+                    }
+
                     var result = await projectService.GetProjectInfosAsync(status, customerCountry, skill, ct);
 
                     return Results.Ok(result);
                 })
             .WithName("GetProjectDashboard")
             .WithTags("Projects")
-            .Produces<IQueryable<ProjectInfoDto>>(StatusCodes.Status200OK);
+            .Produces<List<ProjectInfoDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
         app.MapGet("/api/employees/workload",
             async (string? department, string? country, bool? onlyActive, int? minHours, IProjectService projectService,CancellationToken ct) =>
             {
+                if (minHours < 0)
+                {
+                    return Results.BadRequest("minHours must not be negative.");
+                }
+
                 var result = await projectService.GetEmployeeWorkloadsAsync(department, country, onlyActive, minHours, ct);
                 
                 return Results.Ok(result);
             })
             .WithName("GetEmployeeWorkloads")
             .WithTags("Employees")
-            .Produces<IQueryable<EmployeeWorkloadDto>>(StatusCodes.Status200OK);
+            .Produces<List<EmployeeWorkloadDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
-        app.MapGet("/api/tasks/critical", async () =>
+        app.MapGet("/api/tasks/critical", async (DateTime? dueBefore,TaskPriority? priority, 
+            bool? missingSkillsOnly, int? take,IProjectService service ,CancellationToken ct) =>
         {
+            if (take <= 0)
+            {
+                return Results.BadRequest("take must be greater than zero.");
+            }
+
+            var result = await service.GetCriticalTasksAsync(dueBefore, priority, missingSkillsOnly, take, ct);
             
-        });
+            return Results.Ok(result);
+        })
+            .WithName("GetCriticalTasks")
+            .WithTags("Tasks")
+            .Produces<List<CriticalTaskDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
         
         
         
